@@ -7530,7 +7530,12 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
 
   dprint("Using mpi-datatype: 0x%x in co_broadcast (base_addr=%p, rank= %d).\n",
          datatype, a->base_addr, rank);
-  if (rank == 0)
+  if (datatype == MPI_CHARACTER && rank != 0)
+  {
+      caf_runtime_error("Co_broadcast of character arrays are "
+                        "not yet supported\n");
+  }
+  if (rank == 0 || PREFIX(is_contiguous) (a))
   {
     if( datatype == MPI_BYTE)
       {
@@ -7562,12 +7567,6 @@ PREFIX(co_broadcast) (gfc_descriptor_t *a, int source_image, int *stat,
       goto error;
     goto co_broadcast_exit;
   }
-  else if (datatype == MPI_CHARACTER) /* rank !=0 */
-  {
-      caf_runtime_error("Co_broadcast of character arrays are "
-                        "not yet supported\n");
-  }
-
   for (i = 0; i < size; ++i)
   {
     ptrdiff_t array_offset = 0, tot_ext = 1, extent = 1;
